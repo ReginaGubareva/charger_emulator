@@ -8,7 +8,7 @@ urlpatterns = [
     path('', views.charger_emulator_view, name='charger_emulator_view'),
     path('provisioning/', views.provisioning, name='provisioning'),
     path('heartbeat/', views.heartbeat, name='heartbeat'),
-    path('networkconfig/', views.network_config, name='network_config'),
-    path('heartbeat_response/', csrf_exempt(views.heartbeat_respond), name='heartbeatresponse'),
-    path('wifi_config/', csrf_exempt(views.wifi_config), name='wifi_config')
+    path('networkconfig/<str:serial_number>/', views.network_config, name='networkconfig'),
+    path('heartbeat_response/<str:serial_number>/', csrf_exempt(views.heartbeat_respond), name='heartbeatresponse'),
+    path('wifi_config/<str:serial_number>/', csrf_exempt(views.wifi_config), name='wifi_config')
 ]

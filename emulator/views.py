@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 import emulator.utils as utils
 from emulator.models import Charger
-from .forms import ChargerForm, HeartbeatForm
+from .forms import ChargerForm, HeartbeatForm, SerialNumberForm
 import requests
 
 SERVER_IP = '127.0.0.1'
@@ -58,17 +58,16 @@ def provisioning(request):
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def heartbeat(request):
     response = ""
+    heartbeat_form = HeartbeatForm(request.POST)
+    serial_number_form = ChargerForm()
     if request.method == 'POST':
-        heartbeat_form = HeartbeatForm(request.POST)
-        serial_number_form = ChargerForm()
-
         if heartbeat_form.is_valid():
             data = heartbeat_form.cleaned_data
 
             try:
-                charger = Charger.objects.get(serial_number=32)
+                charger = Charger.objects.get(serial_number=data.get('serial_number'))
             except Charger.DoesNotExist:
-                charger = Charger(serial_number=32)
+                charger = Charger(serial_number=data.get('serial_number'))
                 charger.save()
 
             url = "http://" + SERVER_IP + ":" + str(PORT) + "/charger_api/heartbeat/"
@@ -89,7 +88,7 @@ def heartbeat(request):
 
 @permission_classes([AllowAny])
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
-def heartbeat_respond(request):
+def heartbeat_respond(request, serial_number):
     heartbeat_form = HeartbeatForm()
     serial_number_form = ChargerForm()
 
@@ -98,13 +97,13 @@ def heartbeat_respond(request):
         operations = request.POST.get("operations")
         print("commands:", operations)
         try:
-            charger = Charger.objects.get(serial_number=32)
+            charger = Charger.objects.get(serial_number=serial_number)
             charger.commands = operations
             print(operations)
 
             charger.save()
         except Charger.DoesNotExist:
-            obj = Charger(serial_number=32)
+            obj = Charger(serial_number=serial_number)
             charger.commands = operations
 
             obj.save()
@@ -114,7 +113,7 @@ def heartbeat_respond(request):
         print("state", state, "operations", operations)
     else:
         print(request)
-        charger = Charger.objects.get(serial_number=32)
+        charger = Charger.objects.get(serial_number=serial_number)
         operations = charger.commands
         data = {'operations': operations}
         print('GET request')
@@ -126,9 +125,10 @@ def heartbeat_respond(request):
 
 @permission_classes([AllowAny])
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
-def network_config(request):
+def network_config(request, serial_number):
     heartbeat_form = HeartbeatForm()
-    serial_number_form = ChargerForm()
+    serial_number_form = SerialNumberForm()
+    provisioning_form = ChargerForm()
 
     if request.method == 'POST':
         public_ip_address = request.POST.get("public_ip_address")
@@ -142,7 +142,7 @@ def network_config(request):
         print("network config: ", public_ip_address, private_ip_address, mac_address,
               port, subnet_mask, gateway, dns)
         try:
-            charger = Charger.objects.get(serial_number=32)
+            charger = Charger.objects.get(serial_number=serial_number)
             charger.public_ip_address = public_ip_address
             charger.private_ip_address = private_ip_address
             charger.mac_address = mac_address
@@ -152,7 +152,7 @@ def network_config(request):
             charger.dns = dns
             charger.save()
         except Charger.DoesNotExist:
-            charger = Charger(serial_number=32)
+            charger = Charger(serial_number=serial_number)
             charger.public_ip_address = public_ip_address
             charger.private_ip_address = private_ip_address
             charger.mac_address = mac_address
@@ -165,9 +165,10 @@ def network_config(request):
 
         data = {}
     else:
-
+        if serial_number_form.is_valid():
+            serial_number = request.GET.get("serial_number")
         try:
-            charger = Charger.objects.get(serial_number=32)
+            charger = Charger.objects.get(serial_number=serial_number)
             data = {'public_ip_address': charger.public_ip_address,
                     'private_ip_address': charger.private_ip_address,
                     'mac_address': charger.mac_address,
@@ -180,12 +181,13 @@ def network_config(request):
 
     return render(request, './emulator/main.html', {'response': data,
                                                     'heartbeat_form': heartbeat_form,
-                                                    'serial_number_form': serial_number_form,
+                                                    'provisioning_form': provisioning_form,
                                                     })
+
 
 @permission_classes([AllowAny])
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
-def wifi_config(request):
+def wifi_config(request, serial_number):
     heartbeat_form = HeartbeatForm()
     serial_number_form = ChargerForm()
 
@@ -195,22 +197,20 @@ def wifi_config(request):
 
         print("wifi config: ", wifi_ssid, wifi_pass)
         try:
-            charger = Charger.objects.get(serial_number=32)
+            charger = Charger.objects.get(serial_number=serial_number)
             charger.wifi_ssid = wifi_ssid
             charger.wifi_pass = wifi_pass
             charger.save()
         except Charger.DoesNotExist:
-            charger = Charger(serial_number=32)
+            charger = Charger(serial_number=serial_number)
             charger.wifi_ssid = wifi_ssid
             charger.wifi_pass = wifi_pass
             charger.save()
         data = {}
-
-
     else:
         print("request:", request)
         try:
-            charger = Charger.objects.get(serial_number=32)
+            charger = Charger.objects.get(serial_number=serial_number)
             data = {'wifi_ssid': charger.wifi_ssid,
                     'wifi_pass': charger.wifi_pass,
                     }

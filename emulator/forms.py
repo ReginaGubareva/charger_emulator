@@ -20,3 +20,7 @@ class HeartbeatForm(forms.Form):
     dns = forms.CharField(max_length=250, widget=forms.TextInput(attrs={"class": "form-control"}))
     firmware_version = forms.CharField(max_length=50, widget=forms.TextInput(attrs={"class": "form-control"}))
     state = forms.CharField(max_length=250, widget=forms.TextInput(attrs={"class": "form-control"}))
+
+
+class SerialNumberForm(forms.Form):
+    serial_number = forms.CharField(max_length=250, widget=forms.TextInput(attrs={"class": "form-control"}))
