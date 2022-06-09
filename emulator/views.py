@@ -9,18 +9,19 @@ import requests
 
 SERVER_IP = '127.0.0.1'
 PORT = 8000
+SERIAL_NUMBER = 32
 
 
 @permission_classes([AllowAny])
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def charger_emulator_view(request):
-    serial_number_form = ChargerForm()
+    provisioning_form = ChargerForm()
     heartbeat_form = HeartbeatForm()
     commands_from_server = ""
     print(request.POST)
 
     return render(request, './emulator/main.html', {'response': 'Nothing has sent to server',
-                                                    'serial_number_form': serial_number_form,
+                                                    'provisioning_form': provisioning_form,
                                                     'heartbeat_form': heartbeat_form,
                                                     'commands_from_server': commands_from_server})
 
@@ -28,7 +29,10 @@ def charger_emulator_view(request):
 @permission_classes([AllowAny])
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def provisioning(request):
+
     response = ''
+    provisioning_form = ChargerForm()
+    heartbeat_form = HeartbeatForm()
     if request.method == 'POST':
         print("hello world")
         data = {}
@@ -36,8 +40,11 @@ def provisioning(request):
         if serial_number_form.is_valid():
             data = serial_number_form.cleaned_data
             data = data.get('serial_number')
+            SERIAL_NUMBER = data
 
-        url = "http://" + SERVER_IP + ":" + str(PORT) + "/charger_api/provisioning/" + str(data) + '/'
+        # print('serial number', SERIAL_NUMBER)
+
+        url = "http://" + SERVER_IP + ":" + str(PORT) + "/charger_api/provisioning/" + str(SERIAL_NUMBER) + '/'
 
         response = utils.send_get_to_server(url, data)
         print("response:", response)
@@ -48,9 +55,10 @@ def provisioning(request):
         print(response.rendered_content)
         print('data in Post:', data)
     else:
-        serial_number_form = ChargerForm()
+        provisioning_form = ChargerForm()
 
-    return render(request, './emulator/main.html', {'serial_number_form': serial_number_form,
+    return render(request, './emulator/main.html', {'provisioning_form': provisioning_form,
+                                                    'heartbeat_form': heartbeat_form,
                                                     'response': response})
 
 
@@ -59,11 +67,11 @@ def provisioning(request):
 def heartbeat(request):
     response = ""
     heartbeat_form = HeartbeatForm(request.POST)
-    serial_number_form = ChargerForm()
+    provisioning_form = ChargerForm()
     if request.method == 'POST':
         if heartbeat_form.is_valid():
             data = heartbeat_form.cleaned_data
-
+            SERIAL_NUMBER = data.get('serial_number')
             try:
                 charger = Charger.objects.get(serial_number=data.get('serial_number'))
             except Charger.DoesNotExist:
@@ -72,7 +80,6 @@ def heartbeat(request):
 
             url = "http://" + SERVER_IP + ":" + str(PORT) + "/charger_api/heartbeat/"
             response = utils.send_post_to_server(url, data)
-            # print('response:', response)
             response.accepted_renderer = JSONRenderer()
             response.accepted_media_type = "application/json"
             response.renderer_context = {}
@@ -83,14 +90,14 @@ def heartbeat(request):
     return render(request, './emulator/main.html', {
         'heartbeat_form': heartbeat_form,
         'response': response.data,
-        'serial_number_form': serial_number_form, })
+        'provisioning_form': provisioning_form })
 
 
 @permission_classes([AllowAny])
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def heartbeat_respond(request, serial_number):
     heartbeat_form = HeartbeatForm()
-    serial_number_form = ChargerForm()
+    provisioning_form = ChargerForm()
 
     if request.method == 'POST':
         state = request.POST.get("state")
@@ -119,7 +126,7 @@ def heartbeat_respond(request, serial_number):
         print('GET request')
     return render(request, './emulator/main.html', {'response': data,
                                                     'heartbeat_form': heartbeat_form,
-                                                    'serial_number_form': serial_number_form,
+                                                    'provisioning_form': provisioning_form,
                                                     })
 
 
@@ -189,7 +196,7 @@ def network_config(request, serial_number):
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def wifi_config(request, serial_number):
     heartbeat_form = HeartbeatForm()
-    serial_number_form = ChargerForm()
+    provisioning_form = ChargerForm()
 
     if request.method == 'POST':
         wifi_ssid = request.POST.get("wifi_ssid")
@@ -219,7 +226,7 @@ def wifi_config(request, serial_number):
 
     return render(request, './emulator/main.html', {'response': data,
                                                     'heartbeat_form': heartbeat_form,
-                                                    'serial_number_form': serial_number_form,
+                                                    'provisioning_form': provisioning_form,
                                                     })
 
 
