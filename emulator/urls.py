@@ -9,6 +9,6 @@ urlpatterns = [
     path('provisioning/', views.provisioning, name='provisioning'),
     path('heartbeat/', views.heartbeat, name='heartbeat'),
     path('networkconfig/<str:serial_number>/', views.network_config, name='networkconfig'),
-    path('heartbeat_response/<str:serial_number>/', csrf_exempt(views.heartbeat_respond), name='heartbeatresponse'),
+    # path('heartbeat_response/<str:serial_number>/', csrf_exempt(views.heartbeat_respond), name='heartbeatresponse'),
     path('wifi_config/<str:serial_number>/', csrf_exempt(views.wifi_config), name='wifi_config')
 ]

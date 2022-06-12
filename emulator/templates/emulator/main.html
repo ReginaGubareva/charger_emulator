@@ -78,10 +78,6 @@
                 </div>
             </div>
 
-            <form action='{% url 'heartbeatresponse' serial_number=32%}' method="GET">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-info">Get respond from server</button>
-            </form>
             <form class="mt-3" action='{% url 'networkconfig' serial_number=32 %}' method="GET">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-info">Get network config from server</button>

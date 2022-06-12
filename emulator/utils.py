@@ -1,12 +1,15 @@
 import requests
 from rest_framework import status
 from rest_framework.response import Response
+import json
 
 
 def send_post_to_server(url, data):
     try:
         response = requests.post(url, data)
-        return Response(response, status=status.HTTP_200_OK)
+        response = json.loads(response.content)
+        return response
+        # return Response(response, status=status.HTTP_200_OK)
     except requests.exceptions.ConnectionError as errc:
         return Response(str(errc), status=status.HTTP_200_OK)
     except requests.exceptions.HTTPError as errh:
